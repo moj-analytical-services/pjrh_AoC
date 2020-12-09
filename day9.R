@@ -2,6 +2,7 @@
 
 library(tidyverse)
 
+
 input <- tibble::tribble(~`value`,
                          2,
                          24,
@@ -1005,50 +1006,43 @@ input <- tibble::tribble(~`value`,
                          91923454001723
 )
 
+tic()
 
 # Part 1
 
-# do a Cartesian join to get all combinations of all the numbers
-input_temp1 <- input %>%
-  transmute(id1 = row_number(),
-            val1 = value)
+input_with_ids <- input %>%
+  mutate(id = row_number())
 
-input_temp2 <- input %>%
-  transmute(id2 = row_number(),
-            val2 = value)
+input_validated_temp1 <- input_with_ids %>%
+  filter(id > 25) %>% # remove the preamble
+  rowwise() %>%
+  # create all the combinations of ids of the previous 25 ids
+  mutate(prev_25_ids = list(expand.grid(seq(id - 25, id - 1),
+                                        seq(id - 25, id - 1)))) %>%
+  # unnest to so each row is a combination of the input value and the ids of possible sum rows
+  unnest(cols = c(prev_25_ids)) %>%
+  # remove duplicates
+  filter(Var1 < Var2)
 
-input_xjoin <- crossing(input_temp1, input_temp2)
 
-# only where the rows are within 25 of each other should get summed
-allowed_numbers_df <- input_xjoin %>%
-  filter(id1 < id2, # this removes where id1 = id2 and where id1 and id2 are just swapped order
-         id2 - id1 <= 25) %>%
-  mutate(sum = val1 + val2)
+# join the possible values for summing to the ids
+input_validated_temp1_with_combos <- input_validated_temp1 %>%
+  left_join(input_with_ids,
+            suffix = c("", "_1"),
+            by = c("Var1" = "id")) %>%
+  left_join(input_with_ids,
+            by = c("Var2" = "id"),
+            suffix = c("", "_2"))
 
-# we only need to test where values aren't in the list of all allowed values
-input_to_test <- input %>%
-  mutate(id = row_number()) %>%
-  filter(row_number() > 25,
-         !(value %in% pull(allowed_numbers_df, sum)))
+# find all the sums, and see if any are valid
+input_validated  <- input_validated_temp1_with_combos %>%
+  mutate(sum = value_1 + value_2,
+         valid = sum == value) %>%
+  group_by(value) %>%
+  summarise(valid = any(valid))
 
-# the above only leaves one value, but we test it properly anyway
-# because there could be more than one, and we need the first
-# and also the above only checks against all allowed values, not the
-# allowed values which are made up of the previous 25 numbers
-index_valid <- input_to_test %>% 
-  pmap(function(value, id) {
-    
-    pairwise_sums <- allowed_numbers_df %>%
-      filter(between(id1, id - 25, id - 1),
-             between(id2, id - 25, id - 1)) %>% 
-      pull(sum)
-    
-    value %in% pairwise_sums
-       }) %>%
-  flatten_lgl()
-
-# extract the first invalid number
-ans_part1 <- input_to_test %>% arrange(id) %>% pull(value) %>% .[!index_valid] %>% first()
+# take the first answer
+ans_part1 <- input_validated %>% filter(valid == FALSE) %>% pull(value) %>% first()
 print(ans_part1)
 
 # Part 2
@@ -1080,3 +1074,4 @@ range_ids <- contiguous_sums %>%
 
 input[pull(range_ids, id1):pull(range_ids, id2), ] %>% min() +
 input[pull(range_ids, id1):pull(range_ids, id2), ] %>% max()
+
