@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "b3429c515c4b27ab1831d1c6d691964fb5748d78"
+project_hash = "a5ef6ca815e3f65f5a41c290524ba610146ee835"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -31,6 +31,12 @@ version = "4.16.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.0.1+0"
+
+[[deps.Counters]]
+deps = ["SparseArrays"]
+git-tree-sha1 = "d04db912321b26280a6ad185b3de96d77b81c463"
+uuid = "5a653867-b65e-5b16-a095-b1e26d522bbf"
+version = "0.3.4"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
